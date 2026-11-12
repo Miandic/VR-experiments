@@ -1,0 +1,23 @@
+# ninja log v5
+16	749	8162061659144080	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	e52ab37497d36654
+55	147	8162061653167632	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	f5c00765ec5f4ca0
+147	252	8162061654151962	C:/Users/Miandic/Documents/Code/VR-experiments/QuestDesktop/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/5z5c6u10/obj/arm64-v8a/libswappywrapper.so	ca241c5f83b7a7de
+4	648	8162061658104823	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	4793a1cf72c1d2d4
+48	697	8162061658675884	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	f081e5212118bc58
+11	650	8162061658119978	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	578a32ff028cfa84
+34	649	8162061658129964	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	771863610552d486
+41	651	8162061658169370	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	49288e515a380c51
+22	664	8162061658341568	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	257a6d31d245ba9d
+28	715	8162061658829263	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	44f8c3fc03c3c7f7
+749	827	8162061659950328	C:/Users/Miandic/Documents/Code/VR-experiments/QuestDesktop/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/5z5c6u10/obj/arm64-v8a/libgame.so	a082a3a96f4ffd0
+48	146	8162101129869671	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	f5c00765ec5f4ca0
+146	258	8162101130886567	C:/Users/Miandic/Documents/Code/VR-experiments/QuestDesktop/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/5z5c6u10/obj/arm64-v8a/libswappywrapper.so	ca241c5f83b7a7de
+25	637	8162101134752876	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	771863610552d486
+19	638	8162101134774224	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	4793a1cf72c1d2d4
+10	645	8162101134837509	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	578a32ff028cfa84
+4	657	8162101134952862	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	257a6d31d245ba9d
+36	658	8162101134962861	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	49288e515a380c51
+43	697	8162101135375969	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	f081e5212118bc58
+31	729	8162101135676042	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	44f8c3fc03c3c7f7
+14	755	8162101135919545	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	e52ab37497d36654
+755	835	8162101136725026	C:/Users/Miandic/Documents/Code/VR-experiments/QuestDesktop/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/5z5c6u10/obj/arm64-v8a/libgame.so	a082a3a96f4ffd0

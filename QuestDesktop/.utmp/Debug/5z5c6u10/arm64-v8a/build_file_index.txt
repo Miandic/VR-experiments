@@ -1,0 +1,3 @@
+C:\Users\Miandic\Documents\Code\VR-experiments\QuestDesktop\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\CMakeLists.txt
+C:\Users\Miandic\Documents\Code\VR-experiments\QuestDesktop\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\FramePacing\CMakeLists.txt
+C:\Users\Miandic\Documents\Code\VR-experiments\QuestDesktop\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\CMakeLists.txt

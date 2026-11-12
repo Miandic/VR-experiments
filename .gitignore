@@ -1,0 +1,15 @@
+QuestDesktop/[Ll]ibrary/
+QuestDesktop/[Tt]emp/
+QuestDesktop/[Oo]bj/
+QuestDesktop/[Bb]uilds/
+QuestDesktop/[Ll]ogs/
+QuestDesktop/UserSettings/
+QuestDesktop/*.csproj
+QuestDesktop/*.sln*
+QuestDesktop/Assets/Resources/DevAgentSettings.asset*
+*.apk
+__pycache__/
+.venv/
+pc-host/private/
+*.log
+.device-check/
