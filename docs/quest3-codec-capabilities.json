@@ -1,0 +1,208 @@
+{
+  "device": "Meta Quest 3",
+  "androidApi": 34,
+  "queriedOn": "2026-11-12",
+  "method": "MediaCodecList.REGULAR_CODECS + MediaCodecInfo.VideoCapabilities; read-only query, not a throughput benchmark",
+  "decoders": [
+    {
+      "name": "c2.qti.avc.decoder.low_latency",
+      "mime": "video/avc",
+      "hardware": true,
+      "softwareOnly": false,
+      "lowLatency": true,
+      "widths": "[96, 8192]",
+      "heights": "[96, 8192]",
+      "bitrate": "[1, 70000000]",
+      "widthAlignment": 2,
+      "heightAlignment": 2,
+      "modes": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 2560,
+          "height": 1440,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 3840,
+          "height": 2160,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 3840,
+          "height": 2160,
+          "fps": 30,
+          "supported": true
+        }
+      ],
+      "performancePoints": [
+        "PerformancePoint(8192x4320@15)",
+        "PerformancePoint(7680x4320@30)",
+        "PerformancePoint(4096x2160@120)",
+        "PerformancePoint(3840x2160@120)",
+        "PerformancePoint(1920x1088@240)",
+        "PerformancePoint(1280x720@480)"
+      ],
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 524288
+        },
+        {
+          "profile": 65536,
+          "level": 524288
+        },
+        {
+          "profile": 2,
+          "level": 524288
+        },
+        {
+          "profile": 8,
+          "level": 524288
+        },
+        {
+          "profile": 524288,
+          "level": 524288
+        }
+      ]
+    },
+    {
+      "name": "c2.qti.hevc.decoder.low_latency",
+      "mime": "video/hevc",
+      "hardware": true,
+      "softwareOnly": false,
+      "lowLatency": true,
+      "widths": "[96, 8192]",
+      "heights": "[96, 8192]",
+      "bitrate": "[1, 70000000]",
+      "widthAlignment": 2,
+      "heightAlignment": 2,
+      "modes": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 2560,
+          "height": 1440,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 3840,
+          "height": 2160,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 3840,
+          "height": 2160,
+          "fps": 30,
+          "supported": true
+        }
+      ],
+      "performancePoints": [
+        "PerformancePoint(8192x4320@15)",
+        "PerformancePoint(7680x4320@30)",
+        "PerformancePoint(4096x2160@120)",
+        "PerformancePoint(3840x2160@120)",
+        "PerformancePoint(1920x1088@240)",
+        "PerformancePoint(1280x720@480)"
+      ],
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 33554432
+        },
+        {
+          "profile": 4,
+          "level": 33554432
+        },
+        {
+          "profile": 2,
+          "level": 33554432
+        },
+        {
+          "profile": 4096,
+          "level": 33554432
+        },
+        {
+          "profile": 8192,
+          "level": 33554432
+        }
+      ]
+    },
+    {
+      "name": "c2.qti.av1.decoder.low_latency",
+      "mime": "video/av01",
+      "hardware": true,
+      "softwareOnly": false,
+      "lowLatency": true,
+      "widths": "[96, 8192]",
+      "heights": "[96, 8192]",
+      "bitrate": "[1, 70000000]",
+      "widthAlignment": 2,
+      "heightAlignment": 2,
+      "modes": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 2560,
+          "height": 1440,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 3840,
+          "height": 2160,
+          "fps": 60,
+          "supported": true
+        },
+        {
+          "width": 3840,
+          "height": 2160,
+          "fps": 30,
+          "supported": true
+        }
+      ],
+      "performancePoints": [
+        "PerformancePoint(8192x4320@15)",
+        "PerformancePoint(7680x4320@30)",
+        "PerformancePoint(4096x2160@120)",
+        "PerformancePoint(3840x2160@120)",
+        "PerformancePoint(1920x1088@240)",
+        "PerformancePoint(1280x720@480)"
+      ],
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 131072
+        },
+        {
+          "profile": 4096,
+          "level": 131072
+        },
+        {
+          "profile": 8192,
+          "level": 131072
+        },
+        {
+          "profile": 2,
+          "level": 131072
+        }
+      ]
+    }
+  ]
+}
