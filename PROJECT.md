@@ -1,8 +1,23 @@
 # Quest Desktop — описание и состояние проекта
 
-Обновлено: **12 ноября 2026 года**, часовой пояс Europe/Moscow.
+Обновлено: **13 ноября 2026 года**, часовой пояс Europe/Moscow.
 Этот файл фиксирует требования, реализованное поведение, проверки и дальнейшие работы.
 Он предназначен в том числе для продолжения разработки без восстановления истории чата.
+
+**Актуализация 13.11: видеотракт переработан.** Основной путь APK 0.2.0 — QDS2:
+D3D11 GPU capture → NVENC HEVC/H.264 → AES-GCM UDP/FEC → MediaCodec Surface →
+слой композитора Quest. Vulkan сохранён, декодированные пиксели через CPU/Unity
+не проходят. Новый сервер `pc-host/video_host.py`, TCP 47990 + UDP 47991.
+JPEG теперь только явный резерв `legacyJpeg=true` с прежним `host.py`.
+
+Локальный двухминутный прогон движущегося тестового источника 3840×2160: около
+60 FPS после прогрева (25 startup drops, далее без queue/dependency drops).
+Реальный desktop 1920×1080 — около 54.7 FPS; проверены 16:10, portrait, H.264, смена размеров внутри сессии и
+искусственные потери UDP. Симулятор использует NVENC/NVDEC на ПК; это **не замер Quest**.
+Java packet receiver из APK проходит cross-language тесты на desktop JVM.
+Новая APK собрана, но шлем отключён — MediaCodec, compositing/alpha и Wi-Fi ждут проверки.
+Виртуальный display пока не создан. Полное актуальное описание, запуск, ограничения
+и точка продолжения: [docs/video-pipeline-qds2.md](docs/video-pipeline-qds2.md).
 
 ## 1. Назначение и границы
 
@@ -63,7 +78,33 @@ Android application ID: **`com.miandic.questdesktop`**. Имя приложен�
   без отвода пальца и от одновременного перемещения экрана двумя руками.
 - Автоподключение при запуске и после пробуждения, если `autoConnect=true`.
 
-### Текущий видеопоток — рабочий прототип JPEG
+### Основной видеопоток — QDS2, APK 0.2.0
+
+```text
+Существующий display → D3D11 Desktop Duplication → NVENC HEVC/H.264
+→ AES-GCM UDP/FEC → Java receive worker → MediaCodec Surface → композитор Quest
+```
+
+- Новый сервер: `pc-host/video_host.py`, запуск `pc-host/start_video.ps1`.
+  TCP 47990 — TLS control с pin/token; UDP 47991 — видео с новым AES key на сессию.
+- По умолчанию DXGI output 0, HEVC, 60 FPS, 50 Мбит/с до FEC. Один зритель.
+  H.264 и 30 FPS выбираются явно; bitrate 5–65 Mbps, автоматического congestion control нет.
+- Только сжатые данные проходят Python/Java; GPU-пиксели не копируются через CPU/Unity.
+  На Quest это реализованный путь кода, ещё не подтверждённый runtime-измерением.
+- Vulkan сохранён; OVROverlay external Surface рисуется над passthrough и под Unity UI.
+  Alpha/brightness — per-layer color scale, world/HUD — transform слоя.
+  Lifecycle Surface защищён подтверждением decoder thread, без ожидания на Unity main thread.
+- Размер берётся из SPS с учётом crop; поддержаны portrait/широкие пропорции и смена режима.
+  Размер VR-окна не меняет разрешение источника. Ограничения: чётные стороны 2..8192,
+  до 32 Мп, плюс реальные возможности NVENC/MediaCodec.
+- UDP payload до 1181 байта, FEC 8+1. До 8 незавершённых AU/100 мс, reorder wait 12 мс,
+  decoder queue 3 AU. При потере зависимости/переполнении — ожидание IDR, период 0.5 с.
+  Нет B-frames/lookahead и ожидания показа каждого кадра перед следующим захватом.
+- Annex-B framing по следующему AUD добавляет до одного видеокадра. Нет request-IDR/ARQ.
+- Новый APK: versionCode 2, 73 408 849 байт; [сборка и SHA-256](docs/video-build.json).
+  Новый APK собран, но не установлен/не проверен на отключённом Quest.
+
+### Прежний видеопоток — JPEG, сохранён как legacy-резерв
 
 ```text
 Windows: MSS → Pillow JPEG 4:4:4 → TLS/TCP
@@ -84,7 +125,20 @@ Quest: сетевой поток → Android BitmapFactory → RGBA → две U
 - Это **программный JPEG**, не аппаратный HEVC/H.264 и не прямой GPU-путь.
 - Фактическая наблюдавшаяся частота — порядка **12 FPS**; требования 30/60 FPS пока не выполнены.
 
-## 4. Исправленные проблемы и подтверждения
+## 4. Проверки и история исправлений
+
+### QDS2 / 0.2.0 — локально, 13.11.2026
+
+- 12 Python/Java тестов: legacy TLS/JPEG, QDS2 auth/GCM/FEC/reorder/replay/bounds и Annex-B.
+- Точный VideoPackets.java из APK проходит cross-language тесты на desktop JVM.
+- Unity RunAndBuild: старый config, pin/token, мир/HUD/opacity, руки в landscape и portrait;
+  сборка Android ARM64/IL2CPP/Vulkan без ошибок.
+- Loopback NVENC→UDP→NVDEC: 4K HEVC 120 с — 60.0 FPS после прогрева; реальный desktop — 54.7.
+- 2560×1600 HEVC — 59.9; 1080×1920 H.264 — 60.0; смена трёх размеров за одну сессию.
+- Искусственная потеря 0.1% UDP: около 59.2 FPS, 85 удалённых пакетов, один невосстановимый AU.
+- Это измерения ПК, не MediaCodec/Quest/Wi-Fi. Детали: [результаты](docs/video-local-results.json).
+
+### Предыдущая JPEG-сборка — аппаратные подтверждения 12.11.2026
 
 1. Первоначальное меню следовало за головой и было недоступно для наведения взглядом.
    На промежуточном этапе это исправили, затем основное управление заменили руками.
@@ -105,7 +159,7 @@ Quest: сетевой поток → Android BitmapFactory → RGBA → две U
 затем повторно: «Мерцаний нет и управление работает нормально».**
 В журнале зафиксированы реальные `poke: МЕНЮ` и `direct pinch: Edge 1`.
 
-### Проведённые проверки
+### Проверки предыдущей JPEG-сборки
 
 - Пять Python-тестов протокола/TLS: фрагментация TCP, EOF, границы JSON,
   native resolution и JPEG 4:4:4, авторизация, передача нескольких кадров.
@@ -122,7 +176,7 @@ Quest: сетевой поток → Android BitmapFactory → RGBA → две U
 Синтетические проверки не заменяют проверку жестов на устройстве. Исторические показатели
 разных версий в [docs/validation.md](docs/validation.md) нельзя считать метриками одной финальной сборки.
 
-## 5. Оборудование и сеть — актуальные сведения
+## 5. Оборудование и сеть — последние проверенные сведения (12–13.11)
 
 | Узел | Установлено при проверке |
 |---|---|
@@ -149,72 +203,45 @@ USB ADB периодически переходил в offline при перед
 `192.168.0.181:5555`. При одновременном USB/Wi-Fi подключении нужно явно выбирать transport через `-s`.
 Установленные APK и запущенные процессы не следует считать неизменным состоянием будущей сессии.
 
-## 6. Результаты исследования 4K60
+## 6. Обоснование и ограничения архитектуры
 
-Подробный документ: [docs/video-streaming-design.md](docs/video-streaming-design.md).
+Исследование 12.11 сохранено в [архиве](docs/video-streaming-design.md).
+Первоначальный Sunshine/Moonlight план заменён самостоятельным QDS2 после проверки
+external Surface в установленном Meta SDK. Sunshine/Moonlight не установлены и
+не включены в APK; их интеграция больше не является текущим следующим шагом.
+Цена собственного протокола — необходимость развивать loss/congestion control.
 
-- RTX 2080 поддерживает аппаратное кодирование H.264/HEVC, но **не AV1 encoding**.
-- На самом Quest отдельной read-only утилитой запрошен MediaCodecList: аппаратные AVC,
-  HEVC и AV1 low-latency декодеры объявляют поддержку **3840×2160@60**.
-- Их объявленный предел битрейта — **70 Мбит/с**. Результаты сохранены в
-  [docs/quest3-codec-capabilities.json](docs/quest3-codec-capabilities.json).
-- Это возможности API, **не измерение устойчивого 4K60 в Unity**.
-- Текущий захват Full HD: медиана MSS 13,56 мс, MSS+JPEG 20,99 мс, p95 22,92 мс.
-  Для 60 FPS бюджет кадра 16,67 мс, который уже превышен до передачи и декодирования.
-- Медианный JPEG в этом замере — около 349 КБ; расчёт для тех же кадров при 60 FPS —
-  167,46 Мбит/с. Содержимое экрана влияет на размер; это не универсальная скорость JPEG.
-- Одна полная RGBA-копия 4K60 составляет около **1,99 ГБ/с**. Новый тракт должен исключить
-  повторные CPU-копии кадров через Java/C# и CPU→GPU upload как основной путь.
+RTX 2080 поддерживает аппаратное H.264/HEVC, но не AV1 encoding.
+Read-only опрос Quest объявляет 4K60 у AVC/HEVC/AV1 low-latency decoders, cap 70 Mbps:
+[capabilities](docs/quest3-codec-capabilities.json). Это объявления API, не замер FPS.
 
-### Выбранное направление
+Старый MSS+JPEG Full HD занимал медианно 20.99 мс, p95 22.92 мс до сети/декодера.
+Медианный JPEG около 349 КБ означал расчётные 167.46 Mbps при 60 FPS для того содержимого.
+Эти цифры объясняют замену; они не описывают новый GPU capture.
 
-```text
-Виртуальный монитор Windows 3840×2160
-    → GPU-захват на RTX 2080
-    → NVENC HEVC
-    → транспорт Sunshine / Moonlight
-    → аппаратный MediaCodec на Quest, вывод в Surface
-    → GPU-конверсия/импорт в текстуру Unity
-    → существующий экран в HUD или пространстве
-```
+Новый путь использует SDR 8-bit 4:2:0. Цветной мелкий текст может терять детализацию,
+высокий bitrate не превращает его в 4:4:4. Нужны реальные тесты color range/matrix,
+читаемости и углового размера экрана. 4K источника не означает 3840 видимых пикселей
+по ширине небольшого окна в линзах.
 
-- Предпочтительный host — Sunshine; client core Moonlight следует встроить в наше приложение,
-  сохранив собственный интерфейс и управление. Отдельное окно стороннего клиента не заменяет наш экран.
-- Для дополнительного монитора нужен Windows Indirect Display Driver / IddCx.
-  Практический кандидат — VirtualDrivers Virtual Display Driver; создавать собственный драйвер с нуля не планируется.
-- До установки выбрать конкретный релиз, проверить подпись и способ установки.
-  Драйвер пока не устанавливался; монитор 4K пока не создан.
-- Код Moonlight имеет GPL-3.0: перед включением исходников/линковкой учесть требования лицензии в поставке.
-  В текущую сборку эти зависимости ещё не добавлены.
-- Unity WebRTC поддерживает Android/MediaCodec, но официальный пакет отмечен deprecated;
-  новой основной зависимостью его не выбирать.
-- Начальный профиль: **4K60, HEVC Main 8-bit SDR, около 50 Мбит/с**.
-  H.264 — резерв совместимости, 4K30 — резерв по частоте.
-- Для WAN нужны pairing/проверка идентичности, обязательное шифрование и адаптация к реальной полосе;
-  наличие белого IP само по себе эти задачи не решает.
-
-Главный риск интеграции — GPU-вывод из MediaCodec в текущий **Vulkan** backend Unity.
-Нужен нативный bridge с корректной синхронизацией и временем жизни буферов.
-GLES3 с SurfaceTexture/OES — резервный путь, но смена backend требует повторной проверки
-passthrough, обеих глазных проекций, HUD alpha и всех ручных взаимодействий.
-Нельзя считать Android Surface готовой Unity-текстурой или обещать zero-copy без проверки реализации.
-
-Для аппаратного тракта ожидается YUV 4:2:0: цветной мелкий текст может терять детализацию.
-Высокий битрейт не превращает 4:2:0 в 4:4:4. Нужны текстовые/цветовые тесты и корректные color range/matrix.
-4K источника также не означает 3840 различимых пикселей по ширине небольшого окна в линзах:
-влияют угловой размер, eye render resolution, фильтрация и физические панели Quest.
+Для дополнительного Windows display нужен отдельный IddCx/VDD. Кандидат из исследования —
+VirtualDrivers Virtual Display Driver; конкретный релиз/подпись ещё не проверены,
+драйвер не устанавливался. QDS2 захватывает существующий DXGI display и не создаёт его.
+FFmpeg используется отдельным процессом; при распространении portable сборки сохранить
+её лицензию/notices. Бинарники не включаются в Git.
 
 ## 7. Что предстоит сделать
 
 | Порядок | Работа | Проверяемый результат |
 |---|---|---|
-| 1 | Изолированный MediaCodec → GPU → Unity bridge | Реальный аппаратный decoder, вывод без CPU readback, корректные цвета и обе глазные проекции |
-| 2 | Аппаратный host NVENC и клиентский транспорт | Параллельные стадии, ограниченные очереди, отсутствие ожидания показа каждого кадра перед следующим capture |
+| 0 | Адаптировать ADB smoke test к QDS2 | Новые статусы, свежесть sampledAtUtc, video counters вместо JPEG decodeMs |
+| 1 | Проверить реализованный MediaCodec → external Surface на Quest | Реальный аппаратный decoder, цвета, ориентация, обе глазные проекции, alpha и lifecycle |
+| 2 | Host NVENC/QDS2 реализован, локально проверен; проверить LAN до Quest | Параллельные стадии, ограниченные очереди, независимые received/decoded/rendered counters |
 | 3 | Проверка 4K60 тестового движущегося материала в существующей сцене | Счётчики новых decoded/rendered видеокадров, timestamps, stage timings; VR FPS отдельно |
 | 4 | Проверенный VDD и режим расширенного рабочего стола | Windows видит отдельный монитор 4K60/4K30; захватывается именно он, render adapter — RTX 2080 |
-| 5 | LAN-приёмка не менее 10 минут | Цель 60 FPS, минимум 30 в движущихся сценах; p50/p95, drops/repeats, jitter, thermal throttling |
+| 5 | LAN-приёмка не менее 10 минут | Цель 60 FPS, минимум 30; устранить desktop-предел около 55, измерить p95, drops/repeats, jitter, thermal |
 | 6 | Проверка качества и интерфейса | Мелкий текст, скроллинг, курсор, видео, alpha 0/0.5/1, движение головы, все захваты; без мерцания |
-| 7 | Восстановление сессии | Сон/пробуждение, смена разрешения, потеря связи, запрос ключевого кадра и восстановление после потерь |
+| 7 | Восстановление сессии | Сон/пробуждение, смена разрешения, потеря связи, восстановление после потерь; request-IDR пока не реализован |
 | 8 | WAN-приёмка | Подключение из внешней сети, обязательное шифрование, ограничение битрейта, потери/джиттер |
 | 9 | End-to-end измерение | Задержка от изображения на ПК до показа в шлеме, отдельно от codec/VR FPS |
 
@@ -241,71 +268,99 @@ passthrough, обеих глазных проекций, HUD alpha и всех �
 | `Assets/QuestDesktop/Runtime/HandInputSource.cs` | Локальное чтение UI-поз рук, щипок и grip, геометрические функции |
 | `Assets/QuestDesktop/Runtime/DesktopConfig.cs` | Конфигурации подключения и размещения |
 | `Assets/QuestDesktop/Runtime/DesktopConnection.cs` | QDS1/TLS, сетевой worker и обмен с Android decoder |
-| `Assets/Plugins/Android/com/miandic/questdesktop/JpegDecoder.java` | Текущий программный JPEG decoder и direct ByteBuffer |
+| `Assets/Plugins/Android/com/miandic/questdesktop/JpegDecoder.java` | Legacy JPEG decoder |
+| `Assets/QuestDesktop/Runtime/VideoLayer.cs` | Основной compositor Surface, геометрия, alpha, lifecycle и счётчики |
+| `Assets/Plugins/Android/com/miandic/questdesktop/VideoClient.java` | TLS, UDP worker, decoder worker, аппаратный MediaCodec |
+| `Assets/Plugins/Android/com/miandic/questdesktop/VideoPackets.java` | AES-GCM, FEC/reassembly, replay и лимиты; тестируется на desktop JVM |
+| `pc-host/video_host.py`, `video_protocol.py`, `video_bitstream.py` | GPU capture/NVENC, QDS2 transport, SPS display dimensions |
+| `tools/video_simulator.py`, `tests/test_video.py` | Локальный NVENC→network→NVDEC стенд и fault-injection тесты |
 | `Assets/QuestDesktop/Runtime/DesktopApp.HandTests.cs` | Проверки взаимодействия с синтетическими позами, только Editor |
 | `Assets/QuestDesktop/Editor/DesktopSetup.cs` | Настройка Quest, создание сцены, сборка APK |
 | `Assets/QuestDesktop/Editor/DesktopValidation.cs` | Проверки C#↔Python, экрана и рук |
-| `pc-host/` | Текущий Python JPEG-сервер, протокол и provisioning |
+| `pc-host/` | Основной GPU/QDS2 host, legacy JPEG и provisioning |
 | `tests/` | Python-тесты, TLS fixture, аппаратный прогон через ADB |
 | `tools/AndroidCodecProbe.java` | Read-only опрос decoder capabilities Quest |
-| `tools/profile_capture.py` | Профиль действующего MSS/JPEG захвата без сохранения изображения |
+| `tools/profile_capture.py` | Профиль прежнего MSS/JPEG захвата без сохранения изображения |
 | `docs/` | Инструкции управления, история проверок, исследование видео и capabilities |
 | `.device-check/` | Локальные логи, снимки и измерения; исключено из Git |
 
 Пути `Assets/...` в таблице относятся к `QuestDesktop/`.
 
-## 9. Сборка, запуск и проверки
+## 9. Сборка, запуск и диагностика
 
-Unity: открыть `QuestDesktop`, дождаться импорта пакетов. Меню **Desktop**:
-настроить проект для Quest 3 → создать сцену → собрать APK.
-Результат: `QuestDesktop/Builds/QuestDesktop.apk`. Каталог сборок исключён из Git.
-Batch entry points: `QuestDesktop.EditorTools.DesktopSetup.BatchSetup`,
-`QuestDesktop.EditorTools.DesktopSetup.BuildApk`, `QuestDesktop.EditorTools.DesktopValidation.Run`.
+Инструкция первичной настройки: [README.md](README.md).
+Обычное обновление: открыть существующий QuestDesktop → Desktop → Собрать APK.
+Не пересоздавать сцену для каждой сборки. Результат: `QuestDesktop/Builds/QuestDesktop.apk`.
 
-ПК, PowerShell из корня репозитория:
+Unity batch entry points:
+
+- `QuestDesktop.EditorTools.DesktopSetup.BuildApk` — сборка.
+- `QuestDesktop.EditorTools.DesktopValidation.Run` — регрессии.
+- `QuestDesktop.EditorTools.DesktopValidation.RunAndBuild` — регрессии и сборка.
+- `DesktopSetup.BatchSetup` пересоздаёт сцену; не требуется для обычного обновления.
+
+PowerShell из корня, после первичной настройки:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r pc-host\requirements.txt
-# Только первичная настройка: подставить актуальные адреса.
-.\.venv\Scripts\python.exe pc-host\setup_host.py --lan-host <LAN-IP> --remote-host <PUBLIC-IP>
-.\.venv\Scripts\python.exe pc-host\host.py
+.\pc-host\start_video.ps1
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe tools\profile_capture.py
+$ffmpeg = '.tools/ffmpeg-9.0.2-essentials_build/bin/ffmpeg.exe'
+.\.venv\Scripts\python.exe tools\video_simulator.py --ffmpeg $ffmpeg --seconds 120
 ```
 
-`setup_host.py` не перезаписывает существующие ключи. Повторная генерация не нужна для простой смены IP:
-адреса можно исправить в connection config. Выбор монитора, JPEG quality, FPS ceiling и уменьшение ширины
-для действующего сервера задаются его CLI-параметрами; они не включают аппаратный видеокодек.
+Сервер требует TCP 47990 и UDP 47991. Firewall/NAT автоматически не менялись.
+Для старого `host.py` нужен `legacyJpeg=true`; это отдельный режим и только TCP 47990.
 
-Проверка на устройстве: `tests/check_device.py`; при двух ADB transport задать переменную
-`QUEST_DESKTOP_SERIAL`, например `192.168.0.181:5555`.
-ADB из текущего окружения: `C:\Program Files\Meta VR Developer Hub\resources\bin\adb.exe`.
-Для переподключения к Wi-Fi transport: `adb connect <Quest-IP>:5555`, если режим TCP ADB уже включён.
+### Конфигурация
 
-### Конфигурация и чувствительные данные
+- `pc-host/private/` содержит сертификат/закрытый ключ/token/connection.json, исключено из Git.
+  Секреты не переносить в описание или отчёты. Setup не перезаписывает ключи;
+  обновление APK или смена IP не требуют их регенерации.
+- Quest: `/sdcard/Android/data/com.miandic.questdesktop/files/`.
+- Connection: lanHost, remoteHost, port=47990, token, certificateSha256, autoConnect=false,
+  legacyJpeg=false, videoCodec=hevc, videoFps=60, videoBitrateMbps=50.
+  Это defaults, не содержимое приватного файла. Отсутствующие video-поля нормализуются при Connect.
+- UDP port сообщается сервером через TLS handshake. FPS/bitrate сессии ограничены
+  настройками host/client; автоматической адаптации к полосе нет.
+- Display: hud, width/hudWidth, hudX/Y/distance/opacity, brightness, worldPosition/Euler,
+  hasWorldPose. Сохранённая world-поза зависит от tracking origin, не является spatial anchor.
+- Для загрузки config: `pc-host/push_config.ps1`, затем Reload config/перезапуск.
 
-- `pc-host/private/` содержит закрытый ключ, сертификат, токен и `connection.json`; исключено из Git.
-  Токены и ключи не переносить в описание проекта, отчёты или исходники.
-- Конфигурация Quest: `/sdcard/Android/data/com.miandic.questdesktop/files/`.
-- `connection.json`: `lanHost`, `remoteHost`, `port`, `token`, `certificateSha256`, `autoConnect`.
-- `display.json`: режим HUD, размеры/позиции, world-поза, HUD distance/opacity, brightness.
-- Для копирования подключения есть `pc-host/push_config.ps1`; после копирования — Reload config или перезапуск.
-- В Development APK: `device-state.json` и одноразовый `device-command.json`.
-  Диагностика содержит метку `sampledAtUtc`, FPS/битрейт, время декодирования, состояние рук,
-  счётчики/последнее действие, геометрию и параметры. Секретов в ней нет.
-- Уснувший Quest перестаёт обновлять диагностику: проверять свежесть `sampledAtUtc`,
-  не считать повторяющийся старый JSON актуальным замером производительности.
+### Проверка на устройстве
+
+ADB: `C:\Program Files\Meta VR Developer Hub\resources\bin\adb.exe`.
+При двух transports задавать `-s` или QUEST_DESKTOP_SERIAL; последний Wi-Fi transport
+`192.168.0.181:5555`, если TCP ADB включён. Сначала дождаться завершения Unity batch:
+он останавливает ADB server.
+
+Development APK пишет device-state.json с sampledAtUtc, FPS/bitrate/размерами,
+руками и videoDecoder/videoReceived/videoDecoded/videoRendered/videoDropped/videoRecovered/videoCorrupt.
+QDS2 FPS считается по onFrameRendered с учётом интервала времени, а не по Unity FPS.
+Bitrate — compressed AU bytes без FEC/IP overhead.
+decodeMs/bitmapDecodeMs относятся к JPEG; это не latency аппаратного декодера.
+PTS разных устройств без синхронизации нельзя вычитать для end-to-end задержки.
+
+device-command.json — одноразовые команды, без сетевого порта и секретов.
+При сне файл диагностики перестаёт обновляться: повтор старого JSON не новый замер.
+
+**tests/check_device.py требует адаптации к QDS2**: сейчас он ожидает ровно Connected,
+а новый статус содержит codec/hardware. Нужны также проверка свежести и новых counters.
+Скрипт не является готовой автоматической приёмкой нового видеотракта и не заменяет
+физические жесты/визуальную проверку Surface.
 
 ## 10. Документы для продолжения
 
-- [README.md](README.md) — установка и запуск текущего прототипа.
+- [README.md](README.md) — установка и запуск QDS2, конфигурация, legacy fallback.
+- [docs/video-pipeline-qds2.md](docs/video-pipeline-qds2.md) — актуальная архитектура и приёмка.
+- [docs/video-build.json](docs/video-build.json), [docs/video-local-results.json](docs/video-local-results.json) — сборка и исходные метрики.
 - [docs/hand-interaction.md](docs/hand-interaction.md) — жесты и поведение элементов управления.
 - [docs/validation.md](docs/validation.md) — история проверок и исправлений, с различением версий.
 - [docs/video-streaming-design.md](docs/video-streaming-design.md) — источники исследования,
-  сравнение вариантов, аппаратная архитектура, риски и приёмка 4K60.
+  архив сравнения вариантов от 12.11; первоначальный план заменён QDS2.
 - [docs/quest3-codec-capabilities.json](docs/quest3-codec-capabilities.json) — фактический опрос API Quest.
 
-**Точка продолжения:** интерфейс и ручное управление работают и подтверждены пользователем.
-Следующая основная работа — реализация и проверка аппаратного видеотракта 4K60
-и виртуального монитора; пока они существуют как исследованное направление, не как готовая функция.
+**Точка продолжения:** установить APK 0.2.0 на Quest и проверить новый Surface/UDP путь
+по [чек-листу QDS2](docs/video-pipeline-qds2.md), затем виртуальный монитор и WAN.
+Реализация аппаратного тракта уже есть, локально подтверждено 4K60 на ПК.
+Подтверждение пользователя о руках/отсутствии мерцания относится к предыдущей сборке;
+для нового композитного слоя повторить аппаратную регрессию.

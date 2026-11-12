@@ -38,7 +38,8 @@ namespace QuestDesktop.EditorTools
 
             PlayerSettings.companyName = "Miandic";
             PlayerSettings.productName = "Quest Desktop";
-            PlayerSettings.bundleVersion = "0.1.0";
+            PlayerSettings.bundleVersion = "0.2.0";
+            PlayerSettings.Android.bundleVersionCode = 2;
             PlayerSettings.SetApplicationIdentifier(android, AppId);
             PlayerSettings.SetScriptingBackend(android, ScriptingImplementation.IL2CPP);
             PlayerSettings.SetManagedStrippingLevel(android, ManagedStrippingLevel.Minimal);

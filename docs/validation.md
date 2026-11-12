@@ -1,5 +1,42 @@
 # Проверка Quest Desktop
 
+Последняя сборка — 0.2.0. Аппаратные подтверждения старых разделов не распространяются
+на новый Surface/UDP тракт. Порядок разделов: текущий результат, затем исторические записи.
+
+## 13.11.2026 — QDS2 / APK 0.2.0, локально без Quest
+
+Новый GPU/NVENC → encrypted UDP/FEC → MediaCodec external Surface путь собран
+Unity 6000.3.28f1, Android ARM64/IL2CPP/Vulkan, **0 ошибок**. Шлем отключён;
+результаты прежних аппаратных проверок ниже не относятся к новому Surface-слою.
+
+- 12 Python/Java тестов пройдены: существующий TLS/JPEG и новый QDS2, auth rejection,
+  GCM tampering, replay/limits, FEC, reordering/duplicates и точный APK Java receiver на JVM.
+- Unity RunAndBuild: TLS legacy regression, defaults migration старого connection.json,
+  мир/HUD/opacity, полный набор hand regression в landscape и portrait.
+- 4K HEVC loopback NVENC→UDP→NVDEC, 120 с: 60.0 decode FPS после прогрева,
+  без steady drops. Реальный desktop Full HD: около 54.7 FPS.
+- Проверены HEVC 2560×1600, H.264 portrait, смена размеров в одной сессии,
+  восстановление при искусственной потере 0.1% UDP (около 59.2 FPS).
+
+Архитектура и подробные границы: [video-pipeline-qds2.md](video-pipeline-qds2.md).
+Исходные метрики: [video-local-results.json](video-local-results.json).
+Версия, размер и SHA-256 APK: [video-build.json](video-build.json).
+
+### Ограничение текущего ADB-теста
+
+`tests/check_device.py` пока ожидает QDS1 status == "Connected". Для QDS2 нужно
+обновить распознавание статуса, проверять sampledAtUtc и videoReceived/Decoded/Rendered.
+decodeMs/bitmapDecodeMs не являются метрикой MediaCodec. До адаптации скрипта
+приёмку проводить по [чек-листу QDS2](video-pipeline-qds2.md#что-остаётся-для-приёмки-на-шлеме).
+
+---
+
+## Архив: предыдущие сборки
+
+Ниже сохранены наблюдения и планы на даты соответствующих записей. Упоминания
+контроллеров/взгляда/TCP-only не описывают текущий UI и QDS2. Актуальный backlog —
+[PROJECT.md](../PROJECT.md#7-что-предстоит-сделать).
+
 ## Обновление управления руками, 12.11.2026
 
 ### Исправления после проверки пользователем

@@ -1,0 +1,179 @@
+{
+  "date": "2026-11-13",
+  "version": "0.2.0",
+  "scope": "Windows RTX2080 loopback; NOT Quest or Wi-Fi",
+  "runs": {
+    "qds2-4k-sustained": {
+      "resolution": [
+        3840,
+        2160
+      ],
+      "codec": "hevc",
+      "requested_fps": 60,
+      "seconds": 120,
+      "received_frames": 7202,
+      "decoded_frames": 7177,
+      "receive_fps": 60.113211801983375,
+      "steady_receive_fps": 60.00305867013699,
+      "steady_decode_fps": 60.00445440916979,
+      "frame_interval_p50_ms": 14.244500000131666,
+      "frame_interval_p95_ms": 28.38789999987057,
+      "encoded_mbps": 32.17111918865403,
+      "lost_frames": 0,
+      "dependency_or_queue_drops": 25,
+      "injected_packet_drops": 0,
+      "decoder_warnings": "[in#0/hevc @ 0000019254dd4780] Stream #0: not enough frames to estimate rate; consider increasing probesize",
+      "observed_resolutions": [
+        [
+          3840,
+          2160
+        ]
+      ],
+      "startup_drops": 25,
+      "steady_dependency_or_queue_drops": 0,
+      "scope": "PC loopback NVENC + encrypted UDP/FEC + NVDEC; not Quest/Wi-Fi/end-to-end display latency"
+    },
+    "qds2-1600p": {
+      "resolution": [
+        2560,
+        1600
+      ],
+      "codec": "hevc",
+      "requested_fps": 60,
+      "seconds": 15,
+      "received_frames": 926,
+      "decoded_frames": 901,
+      "receive_fps": 62.4272397866134,
+      "steady_receive_fps": 59.86428415557348,
+      "steady_decode_fps": 59.93017271819293,
+      "frame_interval_p50_ms": 14.038799999980256,
+      "frame_interval_p95_ms": 27.900600000066333,
+      "encoded_mbps": 34.02990880284712,
+      "lost_frames": 0,
+      "dependency_or_queue_drops": 25,
+      "injected_packet_drops": 0,
+      "decoder_warnings": "[in#0/hevc @ 00000263f1d93c40] Stream #0: not enough frames to estimate rate; consider increasing probesize",
+      "scope": "PC loopback NVENC + encrypted UDP/FEC + NVDEC; not Quest/Wi-Fi/end-to-end display latency"
+    },
+    "qds2-portrait": {
+      "resolution": [
+        1080,
+        1920
+      ],
+      "codec": "h264",
+      "requested_fps": 60,
+      "seconds": 15,
+      "received_frames": 928,
+      "decoded_frames": 903,
+      "receive_fps": 62.46432811811823,
+      "steady_receive_fps": 60.060886314523096,
+      "steady_decode_fps": 59.95660030981807,
+      "frame_interval_p50_ms": 14.980600000853883,
+      "frame_interval_p95_ms": 30.061399998885463,
+      "encoded_mbps": 52.10976239822664,
+      "lost_frames": 0,
+      "dependency_or_queue_drops": 25,
+      "injected_packet_drops": 0,
+      "decoder_warnings": "[in#0/h264 @ 000001de5dfb3d00] Stream #0: not enough frames to estimate rate; consider increasing probesize",
+      "scope": "PC loopback NVENC + encrypted UDP/FEC + NVDEC; not Quest/Wi-Fi/end-to-end display latency"
+    },
+    "qds2-loss": {
+      "resolution": [
+        3840,
+        2160
+      ],
+      "codec": "hevc",
+      "requested_fps": 60,
+      "seconds": 20,
+      "received_frames": 1201,
+      "decoded_frames": 1163,
+      "receive_fps": 60.65371022207719,
+      "steady_receive_fps": 59.9517426714678,
+      "steady_decode_fps": 59.191347184408336,
+      "frame_interval_p50_ms": 13.787099999717611,
+      "frame_interval_p95_ms": 28.36849999948754,
+      "encoded_mbps": 32.50352510518464,
+      "lost_frames": 1,
+      "dependency_or_queue_drops": 38,
+      "injected_packet_drops": 85,
+      "decoder_warnings": "[in#0/hevc @ 00000288f2db3900] Stream #0: not enough frames to estimate rate; consider increasing probesize",
+      "observed_resolutions": [
+        [
+          3840,
+          2160
+        ]
+      ],
+      "startup_drops": 25,
+      "steady_dependency_or_queue_drops": 13,
+      "scope": "PC loopback NVENC + encrypted UDP/FEC + NVDEC; not Quest/Wi-Fi/end-to-end display latency"
+    },
+    "qds2-desktop": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "codec": "hevc",
+      "requested_fps": 60,
+      "seconds": 15,
+      "received_frames": 813,
+      "decoded_frames": 813,
+      "receive_fps": 54.96364828173955,
+      "steady_receive_fps": 54.818029007592905,
+      "steady_decode_fps": 54.7060499695438,
+      "frame_interval_p50_ms": 15.62974999887956,
+      "frame_interval_p95_ms": 36.25089999877673,
+      "encoded_mbps": 3.8452703716349035,
+      "lost_frames": 0,
+      "dependency_or_queue_drops": 0,
+      "injected_packet_drops": 0,
+      "decoder_warnings": "[in#0/hevc @ 000001a48cb34340] Stream #0: not enough frames to estimate rate; consider increasing probesize",
+      "observed_resolutions": [
+        [
+          1920,
+          1080
+        ]
+      ],
+      "startup_drops": 0,
+      "steady_dependency_or_queue_drops": 0,
+      "scope": "PC loopback NVENC + encrypted UDP/FEC + NVDEC; not Quest/Wi-Fi/end-to-end display latency"
+    },
+    "qds2-mode-switch": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "codec": "hevc",
+      "requested_fps": 60,
+      "seconds": 18,
+      "received_frames": 1185,
+      "decoded_frames": 1160,
+      "receive_fps": 66.36513949531913,
+      "steady_receive_fps": 64.8605854556478,
+      "steady_decode_fps": 64.97646145250535,
+      "frame_interval_p50_ms": 14.013949999934994,
+      "frame_interval_p95_ms": 28.683700000328827,
+      "encoded_mbps": 37.203271680305456,
+      "lost_frames": 0,
+      "dependency_or_queue_drops": 25,
+      "injected_packet_drops": 0,
+      "decoder_warnings": "[in#0/hevc @ 0000028b4f112a80] Stream #0: not enough frames to estimate rate; consider increasing probesize",
+      "observed_resolutions": [
+        [
+          1080,
+          1920
+        ],
+        [
+          1920,
+          1080
+        ],
+        [
+          2560,
+          1600
+        ]
+      ],
+      "startup_drops": 25,
+      "steady_dependency_or_queue_drops": 0,
+      "scope": "PC loopback NVENC + encrypted UDP/FEC + NVDEC; not Quest/Wi-Fi/end-to-end display latency"
+    }
+  }
+}

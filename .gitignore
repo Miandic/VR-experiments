@@ -13,3 +13,5 @@ __pycache__/
 pc-host/private/
 *.log
 .device-check/
+.tools/
+QuestDesktop/.utmp/

@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "versionCode": 2,
+  "date": "2026-11-13",
+  "apk_bytes": 73408849,
+  "sha256": "f80616924947d91272c36b03cf7fa42f63404eec6efd86a0891a58707737f073",
+  "unity": "6000.3.28f1",
+  "target": "Android ARM64 IL2CPP Vulkan Development",
+  "build_errors": 0,
+  "python_tests": 12,
+  "unity_regression": "PASS including portrait aspect and migrated config",
+  "quest_tested": false
+}

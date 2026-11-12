@@ -44,7 +44,7 @@ namespace QuestDesktop
         int handActionCount, directActionCount, rayActionCount, pokeActionCount;
         Mesh cursorMesh;
         float ScreenScale => screen != null ? screen.lossyScale.x : 0.001f;
-        float Aspect => texture != null && texture.width > 2 ? (float)texture.width / texture.height : 16f / 9f;
+        float Aspect => texture != null && ImageWidth > 2 ? (float)ImageWidth / ImageHeight : 16f / 9f;
 
         void BuildHandControls(OVRCameraRig rig)
         {

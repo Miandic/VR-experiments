@@ -20,6 +20,10 @@ namespace QuestDesktop.EditorTools
 
         public static void Run()
         {
+            var migrated = JsonUtility.FromJson<ConnectionConfig>("{\"videoFps\":0,\"videoBitrateMbps\":0}");
+            migrated.NormalizeVideo();
+            Require(migrated.videoCodec == "hevc" && migrated.videoFps == 60 && migrated.videoBitrateMbps == 50,
+                "Old connection.json did not migrate to QDS2 defaults");
             CheckConnection("valid"); CheckConnection("pin"); CheckConnection("token");
             EditorSceneManager.OpenScene("Assets/Scenes/Desktop.unity");
             var app = UnityEngine.Object.FindFirstObjectByType<DesktopApp>();
@@ -57,8 +61,19 @@ namespace QuestDesktop.EditorTools
             Require(app.GetType().GetField("buttons", Private).GetValue(app) is System.Collections.ICollection controls
                 && controls.Count >= 8, "Menu controls missing");
             app.VerifyHandInteractions();
+            var dynamicTexture = Field<Texture2D>(app, "texture");
+            dynamicTexture.Reinitialize(480, 800);
+            Invoke(app, "ApplyDisplay");
+            Require(Mathf.Abs(screen.rect.width / screen.rect.height - 0.6f) < 0.001f, "Portrait source aspect lost");
+            app.VerifyHandInteractions();
             UnityEngine.Object.DestroyImmediate(app.gameObject);
             Debug.Log("[DesktopValidation] PASS: C# TLS/JPEG, certificate and token rejection, world/HUD transforms, opacity and controls");
+        }
+
+        public static void RunAndBuild()
+        {
+            Run();
+            DesktopSetup.BuildApk();
         }
 
         static void CheckConnection(string mode)

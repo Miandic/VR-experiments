@@ -14,6 +14,11 @@ namespace QuestDesktop
         ConnectionConfig connectionConfig;
         DisplayConfig display;
         DesktopConnection connection;
+        VideoLayer video;
+        long videoFrames, videoBytes;
+        int sourceWidth = 16, sourceHeight = 9;
+        int ImageWidth => video != null && video.Width > 0 ? video.Width : texture.width;
+        int ImageHeight => video != null && video.Height > 0 ? video.Height : texture.height;
         Transform head;
         RectTransform screen, menu;
         RawImage picture;
@@ -23,6 +28,7 @@ namespace QuestDesktop
         bool remote, menuVisible = true, editingHost;
         string hostDraft = "", message = "Ready. Load connection.json, then Connect.";
         float nextStats, frames, bytes, fps, mbps, lastFrame;
+        float statsStarted;
         bool menuUsesController;
         float decodeMs, bitmapDecodeMs;
 
@@ -39,6 +45,7 @@ namespace QuestDesktop
                 message = "Config error: " + error.Message;
             }
             display.Clamp();
+            statsStarted = Time.unscaledTime;
             var rig = FindFirstObjectByType<OVRCameraRig>();
             head = rig != null ? rig.centerEyeAnchor : Camera.main.transform;
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -135,13 +142,25 @@ namespace QuestDesktop
         void Connect()
         {
             Disconnect();
-            try { connection = new DesktopConnection(connectionConfig, remote); message = "Connecting"; }
-            catch (Exception error) { message = error.Message; }
+            try
+            {
+                connectionConfig.NormalizeVideo();
+                if (connectionConfig.legacyJpeg) connection = new DesktopConnection(connectionConfig, remote);
+                else
+                {
+                    video = new GameObject("Video session").AddComponent<VideoLayer>();
+                    video.Open(connectionConfig, remote, screen, display);
+                    videoFrames = videoBytes = 0;
+                }
+                message = "Connecting";
+            }
+            catch (Exception error) { Disconnect(); message = error.Message; }
             lastFrame = Time.unscaledTime;
         }
         void Disconnect()
         {
             connection?.Dispose(); connection = null; message = "Disconnected";
+            if (video != null) { video.Close(); video = null; }
             if (picture != null) { picture.texture = null; picture.color = Color.black; }
         }
         void Recenter()
@@ -183,10 +202,11 @@ namespace QuestDesktop
             }
             else { screen.position = display.worldPosition; screen.rotation = Quaternion.Euler(display.worldEuler); }
             float width = display.hud ? display.hudWidth : display.width;
-            float aspect = texture.width > 2 ? (float)texture.width / texture.height : 16f / 9f;
+            float aspect = ImageWidth > 2 ? (float)ImageWidth / ImageHeight : 16f / 9f;
             screen.sizeDelta = new Vector2(1600, 1600 / aspect);
             screen.localScale = Vector3.one * (width / 1600);
             picture.color = picture.texture == null ? Color.black : new Color(display.brightness, display.brightness, display.brightness, display.hud ? display.hudOpacity : 1);
+            if (video != null) picture.color = Color.clear;
             LayoutHandControls();
         }
         void SetMenu(bool visible)
@@ -216,6 +236,17 @@ namespace QuestDesktop
         {
             if (head == null) return;
             if (Input.GetKeyDown(KeyCode.Tab)) SetMenu(!menuVisible);
+            if (video != null)
+            {
+                if (video.Rendered > videoFrames) lastFrame = Time.unscaledTime;
+                frames += video.Rendered - videoFrames; bytes += video.Bytes - videoBytes;
+                videoFrames = video.Rendered; videoBytes = video.Bytes;
+                if (ImageWidth != sourceWidth || ImageHeight != sourceHeight)
+                { sourceWidth = ImageWidth; sourceHeight = ImageHeight; ApplyDisplay(); }
+                picture.color = Color.clear;
+                if (!video.Alive || Time.unscaledTime - lastFrame > 15)
+                { string reason = video.Alive ? "Video timeout" : video.Status; Disconnect(); message = reason; }
+            }
             byte[] frame = connection?.TakeFrame();
             var pixels = connection?.TakePixels();
             if (frame != null || pixels != null)
@@ -255,11 +286,13 @@ namespace QuestDesktop
             }
             if (Time.unscaledTime >= nextStats)
             {
-                fps = frames; mbps = bytes * 8 / 1000000; frames = bytes = 0; nextStats = Time.unscaledTime + 1;
+                float elapsed = Mathf.Max(0.001f, Time.unscaledTime - statsStarted);
+                fps = frames / elapsed; mbps = bytes * 8 / 1000000 / elapsed;
+                frames = bytes = 0; statsStarted = Time.unscaledTime; nextStats = statsStarted + 1;
             }
             status.text = editingHost ? "PC IP: " + hostDraft + "\n" + message
-                : (connection?.Status ?? message) + "\n" + (remote ? "Internet: " + connectionConfig.remoteHost : "LAN: " + connectionConfig.lanHost);
-            info.text = $"{fps:F0} fps | {mbps:F1} Mbit/s | {texture.width}x{texture.height} | " +
+                : (video?.Status ?? connection?.Status ?? message) + "\n" + (remote ? "Internet: " + connectionConfig.remoteHost : "LAN: " + connectionConfig.lanHost);
+            info.text = $"{fps:F0} fps | {mbps:F1} Mbit/s | {ImageWidth}x{ImageHeight} | " +
                 (display.hud ? $"HUD {display.hudWidth:F2}m / alpha {display.hudOpacity:F2}" : $"World {display.width:F2}m");
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             DeviceDiagnostics();
@@ -284,6 +317,8 @@ namespace QuestDesktop
             public Vector3 leftIndexOnScreen, rightIndexOnScreen;
             public string leftNearTarget, rightNearTarget;
             public bool leftConfident, rightConfident;
+            public string videoDecoder;
+            public long videoReceived, videoDecoded, videoRendered, videoDropped, videoRecovered, videoCorrupt;
         }
         float nextDiagnostic;
         string lastDiagnosticAction = "";
@@ -303,11 +338,14 @@ namespace QuestDesktop
                     else if (request.action == "Show menu") { SetMenu(true); lastDiagnosticAction = request.action; }
                 }
                 var state = new DeviceState {
-                    status = connection?.Status ?? message, lastAction = lastDiagnosticAction,
+                    status = video?.Status ?? connection?.Status ?? message, lastAction = lastDiagnosticAction,
                     streamFps = fps, mbps = mbps, decodeMs = decodeMs, frameTimeMs = Time.unscaledDeltaTime * 1000,
-                    width = texture.width, height = texture.height, hud = display.hud, menuVisible = menuVisible,
+                    width = ImageWidth, height = ImageHeight, hud = display.hud, menuVisible = menuVisible,
+                    videoDecoder = video?.Decoder ?? "JPEG", videoReceived = video?.Received ?? 0,
+                    videoDecoded = video?.Decoded ?? 0, videoRendered = video?.Rendered ?? 0,
+                    videoDropped = video?.Dropped ?? 0, videoRecovered = video?.Recovered ?? 0, videoCorrupt = video?.Corrupt ?? 0,
                     controller = menuUsesController, screenFollowsHead = screen.parent == head,
-                    screenWidth = display.hud ? display.hudWidth : display.width, opacity = picture.color.a,
+                    screenWidth = display.hud ? display.hudWidth : display.width, opacity = display.hud ? display.hudOpacity : 1,
                     worldPosition = screen.position, localPosition = screen.localPosition,
                     handsTracked = (handSessions[0].frame.tracked ? 1 : 0) + (handSessions[1].frame.tracked ? 1 : 0),
                     handActions = handActionCount, directActions = directActionCount, rayActions = rayActionCount,
@@ -338,7 +376,7 @@ namespace QuestDesktop
         void OnApplicationPause(bool paused)
         {
             if (paused) { CancelHandCaptures(); Disconnect(); }
-            else if (head != null && connectionConfig != null && connectionConfig.autoConnect && connection == null) Connect();
+            else if (head != null && connectionConfig != null && connectionConfig.autoConnect && connection == null && video == null) Connect();
         }
         void OnDestroy()
         {

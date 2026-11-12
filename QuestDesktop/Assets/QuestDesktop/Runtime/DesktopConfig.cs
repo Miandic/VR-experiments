@@ -13,6 +13,21 @@ namespace QuestDesktop
         public string token = "";
         public string certificateSha256 = "";
         public bool autoConnect;
+        public bool legacyJpeg;
+        public string videoCodec = "hevc";
+        public int videoFps = 60;
+        public int videoBitrateMbps = 50;
+
+        public void NormalizeVideo()
+        {
+            // Old provisioning JSON has no video fields. Do not rely on Unity's
+            // deserialization of absent field initializers across versions.
+            if (string.IsNullOrWhiteSpace(videoCodec)) videoCodec = "hevc";
+            videoCodec = videoCodec.Trim().ToLowerInvariant();
+            if (videoCodec != "hevc" && videoCodec != "h264") throw new ArgumentException("videoCodec must be hevc or h264");
+            if (videoFps != 30 && videoFps != 60) videoFps = 60;
+            if (videoBitrateMbps < 5 || videoBitrateMbps > 65) videoBitrateMbps = 50;
+        }
     }
 
     [Serializable]
